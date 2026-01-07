@@ -1,16 +1,29 @@
 const express = require("express");
-const authRoutes = require("../routes/auth.routes");
+const cors = require("cors");
+require("dotenv").config();
+const { pool, testConnection } = require("./db");
+const authRoutes = require("./routes/auth.routes");
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+app.use(cors());
 app.use("/auth", authRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "Server is running" });
 });
 
-app.listen(PORT, () => {
-  console.log("Server is running on port", PORT);
-  console.log("Health check at: http://localhost:" + PORT + "/health");
-});
+const startServer = async () => {
+  const dbConnected = await testConnection();
+
+  if (!dbConnected) {
+    console.error("Cannot start server without database connection");
+    process.exit(1);
+  }
+  app.listen(PORT, () => {
+    console.log("Server is running on port", PORT);
+  });
+};
+startServer();
+module.exports = app;
